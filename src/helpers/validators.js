@@ -1,3 +1,6 @@
+import { allPass, equals, keys, length, prop, filter, gte, compose } from 'ramda'
+
+
 /**
  * @file Домашка по FP ч. 1
  * 
@@ -13,20 +16,46 @@
  * Если какие либо функции написаны руками (без использования библиотек) это не является ошибкой
  */
 
-// 1. Красная звезда, зеленый квадрат, все остальные белые.
-export const validateFieldN1 = ({star, square, triangle, circle}) => {
-    if (triangle !== 'white' || circle !== 'white') {
-        return false;
-    }
 
-    return star === 'red' && square === 'green';
-};
+
+const getStar = prop('star'),
+    getSquare = prop('square'),
+    getTriangle = prop('triangle'),
+    getCircle = prop('circle');
+
+const isWhite = equals('white'),
+    isGreen = equals('green'),
+    isRed = equals('red'),
+    isBlue = equals('blue'),
+    isOrange = equals('orange');
+
+const filterGreen = filter(isGreen),
+    filterBlue = filter(isBlue),
+    filterRed = filter(isRed);
+
+const countFigure = compose(length, keys),
+    countGreen = compose(countFigure, filterGreen),
+    countBlue = compose(countFigure, filterBlue),
+    countRed = compose(countFigure, filterRed);
+
+const isMoreOrEqThanTwo = (number) => gte(number, 2)
+
+// 1. Красная звезда, зеленый квадрат, все остальные белые.
+export const validateFieldN1 = allPass([
+    compose(isWhite, getCircle),
+    compose(isWhite, getTriangle),
+    compose(isRed, getStar),
+    compose(isGreen, getSquare)
+]);
 
 // 2. Как минимум две фигуры зеленые.
-export const validateFieldN2 = () => false;
+export const validateFieldN2 = compose(
+    isMoreOrEqThanTwo,
+    countGreen
+)
 
 // 3. Количество красных фигур равно кол-ву синих.
-export const validateFieldN3 = () => false;
+export const validateFieldN3 = (figure) => equals(countRed(figure), countBlue(figure));
 
 // 4. Синий круг, красная звезда, оранжевый квадрат
 export const validateFieldN4 = () => false;
