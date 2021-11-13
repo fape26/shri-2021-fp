@@ -14,38 +14,64 @@
  * Иногда промисы от API будут приходить в состояние rejected, (прямо как и API в реальной жизни)
  * Ответ будет приходить в поле {result}
  */
+
+import { allPass, compose, gt, length, when, lt, not, prop, test, tap, andThen } from 'ramda';
 import Api from '../tools/api';
+
+
 
 const api = new Api();
 
-/**
- * Я – пример, удали меня
- */
-const wait = time => new Promise(resolve => {
-    setTimeout(resolve, time);
-})
 
-const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
-    /**
-     * Я – пример, удали меня
-     */
-    writeLog(value);
+const getValue = prop('value'),
+    getWriteLog = prop('writeLog'),
+    getSuccess = prop('handleSuccess'),
+    getError = prop('handleError');
 
-    api.get('https://api.tech/numbers/base', {from: 2, to: 10, number: '01011010101'}).then(({result}) => {
-        writeLog(result);
-    });
 
-    wait(2500).then(() => {
-        writeLog('SecondLog')
+const isNumber = test(/^\d+(\.\d+)?$/),
+    isValidateValueLength = compose(
+    allPass([gt(10), lt(2)]),
+    length,
+);
 
-        return wait(1500);
-    }).then(() => {
-        writeLog('ThirdLog');
+const isValidatedValue = compose(
+    allPass([isValidateValueLength,
+    isNumber
+    ]),
+    getValue
+);
 
-        return wait(400);
-    }).then(() => {
-        handleSuccess('Done');
-    });
+const isNotValidatedValue = compose(
+    not,
+    isValidatedValue
+);
+
+
+
+const logError = (input) => getError(input)('ValidationError')
+
+const processSequence = (input) => {
+    
+    const writeLog = getWriteLog(input);
+    const handleSuccess = getSuccess(input);
+    const logInput = compose(writeLog, getValue);
+
+    const result = compose(
+        when(
+            isValidatedValue,
+            compose(
+                andThen(handleSuccess),
+            )
+        ),
+        when(
+            isNotValidatedValue,
+            tap(logError)
+        ),
+        tap(logInput)
+    )
+
+    result(input);
 }
 
 export default processSequence;
