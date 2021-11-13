@@ -1,4 +1,4 @@
-import { allPass, equals, keys, length, prop, filter, gte, compose } from 'ramda'
+import { allPass, equals, keys, length, prop, filter, gt, gte, compose, anyPass, not } from 'ramda'
 
 
 /**
@@ -16,8 +16,6 @@ import { allPass, equals, keys, length, prop, filter, gte, compose } from 'ramda
  * Если какие либо функции написаны руками (без использования библиотек) это не является ошибкой
  */
 
-
-
 const getStar = prop('star'),
     getSquare = prop('square'),
     getTriangle = prop('triangle'),
@@ -31,14 +29,21 @@ const isWhite = equals('white'),
 
 const filterGreen = filter(isGreen),
     filterBlue = filter(isBlue),
-    filterRed = filter(isRed);
+    filterRed = filter(isRed),
+    filterOrange = filter(isOrange),
+    filterWhite = filter(isWhite);
 
 const countFigure = compose(length, keys),
     countGreen = compose(countFigure, filterGreen),
     countBlue = compose(countFigure, filterBlue),
-    countRed = compose(countFigure, filterRed);
+    countRed = compose(countFigure, filterRed),
+    countOrange = compose(countFigure, filterOrange),
+    countWhite = compose(countFigure, filterWhite);
 
-const isMoreOrEqThanTwo = (number) => gte(number, 2)
+const isMoreOrEqThanTwo = (number) => gte(number, 2),
+    isMoreThanTwo = (number) => gt(number, 2);
+
+const isSquareSameColorTriangle = (colorObj) => equals(getSquare(colorObj), getTriangle(colorObj));
 
 // 1. Красная звезда, зеленый квадрат, все остальные белые.
 export const validateFieldN1 = allPass([
@@ -58,22 +63,42 @@ export const validateFieldN2 = compose(
 export const validateFieldN3 = (figure) => equals(countRed(figure), countBlue(figure));
 
 // 4. Синий круг, красная звезда, оранжевый квадрат
-export const validateFieldN4 = () => false;
+export const validateFieldN4 = allPass([
+    compose(isBlue, getCircle),
+    compose(isRed, getStar),
+    compose(isOrange, getSquare)
+])
 
 // 5. Три фигуры одного любого цвета кроме белого (четыре фигуры одного цвета – это тоже true).
-export const validateFieldN5 = () => false;
+export const validateFieldN5 = anyPass([
+    compose(isMoreThanTwo, countRed),
+    compose(isMoreThanTwo, countGreen),
+    compose(isMoreThanTwo, countBlue),
+    compose(isMoreThanTwo, countOrange)
+])
 
 // 6. Две зеленые фигуры (одна из них треугольник), еще одна любая красная.
-export const validateFieldN6 = () => false;
+export const validateFieldN6 = allPass([
+    compose(isGreen, getTriangle),
+    compose(equals(2), countGreen),
+    compose(equals(1), countRed)
+])
 
 // 7. Все фигуры оранжевые.
-export const validateFieldN7 = () => false;
+export const validateFieldN7 = compose(equals(4), countOrange);
 
 // 8. Не красная и не белая звезда.
-export const validateFieldN8 = () => false;
+export const validateFieldN8 = allPass([
+    compose(not, isRed, getStar),
+    compose(not, isWhite, getStar)
+])
 
 // 9. Все фигуры зеленые.
-export const validateFieldN9 = () => false;
+export const validateFieldN9 = compose(equals(4), countGreen);
 
 // 10. Треугольник и квадрат одного цвета (не белого)
-export const validateFieldN10 = () => false;
+export const validateFieldN10 = allPass([
+    compose(not, isWhite, getTriangle),
+    compose(not, isWhite, getSquare),
+    isSquareSameColorTriangle
+])
